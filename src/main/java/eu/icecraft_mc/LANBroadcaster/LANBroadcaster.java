@@ -9,12 +9,11 @@ import java.util.logging.Level;
 
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
 
 public class LANBroadcaster extends JavaPlugin {
-    final String payload = "[MOTD]%s[/MOTD][AD]%s[/AD]";
-    final String multicastAddress = "224.0.2.60";
-    final int PORT = 4445;
+    final static String payload = "[MOTD]%s[/MOTD][AD]%s[/AD]";
+    final static String multicastAddress = "224.0.2.60";
+    final static int PORT = 4445;
 
     private InetAddress group;
     private MulticastSocket socket;
@@ -22,34 +21,33 @@ public class LANBroadcaster extends JavaPlugin {
     @Override
     public void onEnable() {
         try {
-            this.group = InetAddress.getByName("224.0.2.60");
+            this.group = InetAddress.getByName(multicastAddress);
             this.socket = new MulticastSocket(this.PORT);
 
             this.socket.setTimeToLive(3);
             this.socket.joinGroup(this.group);
 
-            final String actualIp = Bukkit.getIp().isEmpty() ? InetAddress.getLocalHost().getHostAddress() : Bukkit.getIp();
+            final String actualIp = Bukkit.getIp().length() == 0 ? InetAddress.getLocalHost().getHostAddress() : Bukkit.getIp();
             final String formattedPayload = String.format(this.payload, Bukkit.getMotd(), actualIp);
             this.getLogger().info("Multicast packet payload: " + formattedPayload);
 
             final byte[] b = formattedPayload.getBytes();
             final DatagramPacket d = new DatagramPacket(b, b.length, this.group, this.PORT);
 
-            Bukkit.getScheduler().scheduleAsyncRepeatingTask(this, new BukkitRunnable() {
-                
+            Bukkit.getScheduler().scheduleAsyncRepeatingTask(this, new Runnable() {
                 AtomicBoolean running = new AtomicBoolean();
-                
-                @Override
-                public void run() {                    
+
+                public void run() {
                     try {
-                        if (!running.compareAndSet(false, true)) return;
-                        LANBroadcaster.this.socket.send(d);
-                        running.set(false);
+                        if (running.compareAndSet(false, true)) {
+                            LANBroadcaster.this.socket.send(d);
+                            running.set(false);
+                        }
                     } catch (final IOException e) {
                         throw new RuntimeException(LANBroadcaster.this.toString() + " failed to send broadcast packet", e);
                     }
                 }
-            }, 30l, 30l);
+            }, 0, 30l);
         } catch (final IOException e) {
             this.getLogger().log(Level.SEVERE, e.getMessage(), e);
             this.getPluginLoader().disablePlugin(this);
