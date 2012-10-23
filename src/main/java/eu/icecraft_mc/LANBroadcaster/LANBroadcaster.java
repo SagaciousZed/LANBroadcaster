@@ -11,7 +11,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class LANBroadcaster extends JavaPlugin {
-    final static String payload = "[MOTD]%s[/MOTD][AD]%s[/AD]";
+    final static String payload = "[MOTD]%s:%s[/MOTD][AD]%s[/AD]";
     final static String multicastAddress = "224.0.2.60";
     final static int PORT = 4445;
 
@@ -28,7 +28,7 @@ public class LANBroadcaster extends JavaPlugin {
             this.socket.joinGroup(this.group);
 
             final String actualIp = Bukkit.getIp().length() == 0 ? InetAddress.getLocalHost().getHostAddress() : Bukkit.getIp();
-            final String formattedPayload = String.format(this.payload, Bukkit.getMotd(), actualIp);
+            final String formattedPayload = String.format(this.payload, Bukkit.getMotd(), Bukkit.getPort(), actualIp);
             this.getLogger().info("Multicast packet payload: " + formattedPayload);
 
             final byte[] b = formattedPayload.getBytes();
